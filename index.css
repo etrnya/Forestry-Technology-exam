@@ -1151,3 +1151,124 @@ body {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Mobile Responsive (RWD) Rules */
+#mobile-menu-btn {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    /* Top Bar Mobile Adjustments */
+    .top-bar {
+        padding: 0.75rem 1rem;
+        gap: 0.5rem;
+    }
+    
+    #mobile-menu-btn {
+        display: flex !important;
+        flex-shrink: 0;
+    }
+    
+    .search-wrapper {
+        max-width: none;
+        flex: 1;
+    }
+    
+    .year-filter, .level-filter, #theme-toggle-btn {
+        display: none !important; /* 隱藏於頂部欄，手機尺寸下由主面板隱藏 */
+    }
+
+    /* Sidebar Drawer Style */
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 10000;
+        width: 280px;
+        transform: translateX(-100%);
+        box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
+        transition: transform var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    
+    .sidebar-toggle-btn {
+        display: none !important;
+    }
+
+    /* Sidebar backdrop overlay for mobile */
+    .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(3px);
+        z-index: 9999;
+        display: none;
+    }
+    
+    .sidebar-backdrop.show {
+        display: block;
+    }
+
+    /* Mobile Workspace Layout (Master-Detail) */
+    .workspace-columns {
+        flex-direction: column;
+        position: relative;
+    }
+    
+    .questions-list-panel {
+        width: 100% !important;
+        border-right: none;
+        display: flex;
+    }
+    
+    .question-details-panel {
+        width: 100% !important;
+        position: absolute;
+        inset: 0;
+        z-index: 50;
+        background: var(--bg-dark);
+        display: none;
+    }
+    
+    /* Body Class State for Switch */
+    body.show-detail .question-details-panel {
+        display: flex;
+    }
+    
+    body.show-detail .questions-list-panel {
+        display: none;
+    }
+    
+    #mobile-back-btn {
+        display: flex !important;
+    }
+    
+    /* Modal Adjustment for Mobile */
+    .modal-container {
+        width: 100%;
+        max-height: 90vh;
+    }
+    
+    .btn-control-panel {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .btn-control-panel button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .outline-textarea {
+        height: 180px;
+    }
+    
+    .eval-scores-grid {
+        grid-template-columns: 1fr;
+    }
+}
+

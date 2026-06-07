@@ -61,7 +61,15 @@ document.addEventListener('DOMContentLoaded', () => {
     initApp();
 });
 
+// 手機版 Backdrop 元素
+let mobileBackdrop;
+
 function initApp() {
+    // 建立手機版遮罩
+    mobileBackdrop = document.createElement('div');
+    mobileBackdrop.className = 'sidebar-backdrop';
+    document.body.appendChild(mobileBackdrop);
+
     // 載入既有草稿與設定
     loadUserDrafts();
     loadSettings();
@@ -70,6 +78,31 @@ function initApp() {
     // 事件監聽器綁定
     sidebarToggle.addEventListener('click', toggleSidebar);
     
+    // 手機版漢堡選單事件
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.add('open');
+            mobileBackdrop.classList.add('show');
+        });
+    }
+
+    // 點選遮罩關閉側邊欄
+    mobileBackdrop.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        mobileBackdrop.classList.remove('show');
+    });
+
+    // 手機版返回按鈕
+    const mobileBackBtn = document.getElementById('mobile-back-btn');
+    if (mobileBackBtn) {
+        mobileBackBtn.addEventListener('click', () => {
+            document.body.classList.remove('show-detail');
+            selectedQuestionId = null;
+            document.querySelectorAll('.question-item').forEach(item => item.classList.remove('active'));
+        });
+    }
+    
     subjectBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             subjectBtns.forEach(b => b.classList.remove('active'));
@@ -77,6 +110,10 @@ function initApp() {
             button.classList.add('active');
             currentSubject = button.getAttribute('data-subject');
             renderQuestions();
+
+            // 手機上點選科目後自動關閉抽屜
+            sidebar.classList.remove('open');
+            mobileBackdrop.classList.remove('show');
         });
     });
 
@@ -376,6 +413,11 @@ function selectQuestion(questionId) {
     
     // 載入該題的既有評估結果（如果有）
     loadSavedEvaluation(questionId);
+
+    // 手機尺寸下，選取題目後切換至詳細畫面
+    if (window.innerWidth <= 768) {
+        document.body.classList.add('show-detail');
+    }
 
     // 滾動回到頂部
     detailScrollArea.scrollTop = 0;

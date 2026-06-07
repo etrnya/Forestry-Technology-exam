@@ -78,7 +78,11 @@
         <main class="main-workspace">
             <!-- Top Controls -->
             <header class="top-bar">
+                <button class="btn-action-icon" id="mobile-menu-btn" title="打開科目選單">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
                 <div class="search-wrapper">
+
                     <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
                     <input type="text" class="search-input" id="search-input" placeholder="搜尋題目關鍵字或標籤...">
                 </div>
@@ -134,8 +138,12 @@
                     
                     <!-- Content State -->
                     <div class="detail-scroll-area" id="detail-scroll-area" style="display: none;">
+                        <button class="btn-secondary" id="mobile-back-btn" style="display: none; margin-bottom: 1rem; align-self: flex-start; gap: 0.5rem; justify-content: center; width: 100%;">
+                            <i class="fa-solid fa-arrow-left"></i> 返回題目列表
+                        </button>
                         <!-- Question Card -->
                         <div class="detail-card">
+
                             <div class="detail-header">
                                 <div class="detail-meta-group">
                                     <span class="badge-tag badge-year" id="detail-year">114年</span>
