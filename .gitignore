@@ -1,0 +1,21 @@
+# 系統與環境
+node_modules/
+.env
+.env.local
+.env.*.local
+__pycache__/
+*.pyc
+
+# 編輯器與快取
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 本地大型二進位下載檔案 (考畢試題 PDF)
+downloads/
+*.pdf
+
+# 建置輸出
+dist/
+build/
