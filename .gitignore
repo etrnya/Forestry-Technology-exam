@@ -19,3 +19,6 @@ downloads/
 # 建置輸出
 dist/
 build/
+
+# 測試用腳本 (本地開發用，不提交)
+test_*.py
