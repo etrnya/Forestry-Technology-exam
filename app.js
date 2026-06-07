@@ -545,15 +545,23 @@ function loadSavedEvaluation(questionId) {
 
 // AI Evaluation Logic
 async function handleAiEvaluation() {
-    if (!selectedQuestionId) return;
+    console.log('[AI解題] 按鈕點擊，selectedQuestionId =', selectedQuestionId);
+
+    if (!selectedQuestionId) {
+        showToast('請先在左側題目列表中選擇一道申論題！', 'warning');
+        return;
+    }
     
     const userOutline = outlineTextarea.value.trim();
+    console.log('[AI解題] 擬答內容長度 =', userOutline.length);
     if (!userOutline) {
         showToast('請先輸入您的答題大綱 / 擬答草稿，再進行 AI 解題！', 'warning');
         return;
     }
 
     const apiKey = localStorage.getItem('api_key') || '';
+    const engine = localStorage.getItem('api_engine') || 'deepseek';
+    console.log('[AI解題] API Engine =', engine, '| API Key 長度 =', apiKey.length);
     if (!apiKey) {
         showToast('請先設定您的 AI API 金鑰 (API Key)！', 'warning');
         settingsModal.classList.add('show');
@@ -564,13 +572,19 @@ async function handleAiEvaluation() {
     const questionObj = questions_db.find(q => q.id === selectedQuestionId);
     const answerObj = answers_db[selectedQuestionId] || { key_concepts: [], standard_outline: [] };
 
-    // 顯示 Loading
+    // 按鈕 Loading 狀態
+    const originalBtnHTML = btnAiEvaluate.innerHTML;
+    btnAiEvaluate.disabled = true;
+    btnAiEvaluate.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> AI 解題中...`;
+
+    // 顯示 Loading Overlay
     loadingText.innerText = '正在連結 AI 解題引擎進行分析...';
     loadingOverlay.classList.add('show');
 
     try {
-        const engine = localStorage.getItem('api_engine') || 'deepseek';
+        console.log('[AI解題] 開始呼叫 API，engine =', engine);
         const evaluation = await callAiApi(engine, apiKey, questionObj, answerObj, userOutline);
+        console.log('[AI解題] API 回傳成功，evaluation =', evaluation);
         
         // 儲存評估結果
         const evalKey = `eval_result_${selectedQuestionId}`;
@@ -590,10 +604,12 @@ async function handleAiEvaluation() {
         }, 200);
 
     } catch (error) {
-        console.error('AI Evaluation error:', error);
+        console.error('[AI解題] API 錯誤:', error);
         showToast(`解題失敗: ${error.message}`, 'error');
     } finally {
         loadingOverlay.classList.remove('show');
+        btnAiEvaluate.disabled = false;
+        btnAiEvaluate.innerHTML = originalBtnHTML;
     }
 }
 
