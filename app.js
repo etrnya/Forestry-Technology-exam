@@ -128,6 +128,22 @@ function initApp() {
     btnToggleRef.addEventListener('click', toggleRefAnswer);
     btnAiEvaluate.addEventListener('click', handleAiEvaluation);
 
+    // 即時解題與複製提示詞事件
+    const btnSolveLive = document.getElementById('btn-solve-live');
+    if (btnSolveLive) btnSolveLive.addEventListener('click', handleLiveAiSolve);
+    
+    const btnClearAiCache = document.getElementById('btn-clear-ai-cache');
+    if (btnClearAiCache) btnClearAiCache.addEventListener('click', handleClearLiveAiCache);
+    
+    const btnCopyPrompt = document.getElementById('btn-copy-prompt');
+    if (btnCopyPrompt) btnCopyPrompt.addEventListener('click', handleCopyPrompt);
+
+    const btnCopyAiAnswer = document.getElementById('btn-copy-ai-answer');
+    if (btnCopyAiAnswer) btnCopyAiAnswer.addEventListener('click', handleCopyAiAnswer);
+
+    const btnDownloadAiAnswer = document.getElementById('btn-download-ai-answer');
+    if (btnDownloadAiAnswer) btnDownloadAiAnswer.addEventListener('click', handleDownloadAiAnswer);
+
     // 設定視窗事件
     openSettingsBtn.addEventListener('click', () => settingsModal.classList.add('show'));
     closeSettingsBtn.addEventListener('click', () => settingsModal.classList.remove('show'));
@@ -229,13 +245,15 @@ function updateQuestionCardStatus(questionId, content) {
     if (card) {
         const badge = card.querySelector('.item-status-badge');
         if (badge) {
-            // 檢查是否進行過 AI 評估
+            // 檢查是否進行過 AI 評估或 AI 即時解題
             const evalKey = `eval_result_${questionId}`;
             const hasEval = localStorage.getItem(evalKey);
+            const liveAiKey = `live_ai_answer_${questionId}`;
+            const hasLiveAi = localStorage.getItem(liveAiKey);
 
-            if (hasEval) {
+            if (hasLiveAi || hasEval) {
                 badge.className = 'item-status-badge status-completed';
-                badge.innerText = '已AI評估';
+                badge.innerText = '已AI解題';
             } else if (content.trim().length > 10) {
                 badge.className = 'item-status-badge status-draft';
                 badge.innerText = '已擬答草稿';
@@ -327,12 +345,14 @@ function renderQuestions() {
         const draftContent = userDrafts[q.id] || '';
         const evalKey = `eval_result_${q.id}`;
         const hasEval = localStorage.getItem(evalKey);
+        const liveAiKey = `live_ai_answer_${q.id}`;
+        const hasLiveAi = localStorage.getItem(liveAiKey);
 
         let statusClass = 'status-pending';
         let statusText = '未作答';
-        if (hasEval) {
+        if (hasLiveAi || hasEval) {
             statusClass = 'status-completed';
-            statusText = '已AI評估';
+            statusText = '已AI解題';
         } else if (draftContent.trim().length > 10) {
             statusClass = 'status-draft';
             statusText = '已擬答草稿';
@@ -413,6 +433,15 @@ function selectQuestion(questionId) {
     
     // 載入該題的既有評估結果（如果有）
     loadSavedEvaluation(questionId);
+
+    // 載入該題的即時解題快取（如果有）
+    loadLiveAiAnswerCache(questionId);
+
+    // 更新提示詞預覽文字
+    const previewEl = document.getElementById('prompt-preview-text');
+    if (previewEl) {
+        previewEl.innerText = `請幫我解答「${question.year}年${question.category} - ${question.subject}第${question.q_num}題...」`;
+    }
 
     // 手機尺寸下，選取題目後切換至詳細畫面
     if (window.innerWidth <= 768) {
@@ -817,4 +846,385 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+// 載入該題的即時解題快取
+function loadLiveAiAnswerCache(questionId) {
+    const cacheKey = `live_ai_answer_${questionId}`;
+    const cached = localStorage.getItem(cacheKey);
+    const box = document.getElementById('live-ai-response-box');
+    const actions = document.getElementById('live-ai-actions');
+    const warning = document.getElementById('ai-hallucination-warning');
+    const indicator = document.getElementById('ai-cache-indicator');
+    const btnSolveLive = document.getElementById('btn-solve-live');
+    const btnClearCache = document.getElementById('btn-clear-ai-cache');
+
+    if (cached) {
+        box.style.display = 'block';
+        box.innerHTML = marked.parse(cached);
+        actions.style.display = 'flex';
+        warning.style.display = 'flex';
+        indicator.style.display = 'flex';
+        indicator.querySelector('span').innerText = '✨ 已載入本機快取解答（不消耗 API 額度）';
+        btnSolveLive.innerHTML = '<i class="fa-solid fa-robot"></i> 重新呼叫 AI 即時解題';
+        btnClearCache.style.display = 'block';
+    } else {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        actions.style.display = 'none';
+        warning.style.display = 'none';
+        indicator.style.display = 'none';
+        btnSolveLive.innerHTML = '<i class="fa-solid fa-robot"></i> 呼叫 AI 即時解題';
+        btnClearCache.style.display = 'none';
+    }
+}
+
+// 清除即時解題快取
+function handleClearLiveAiCache() {
+    if (!selectedQuestionId) return;
+    if (confirm('是否確定刪除此題的 AI 即時解題快取？此操作不可復原。')) {
+        localStorage.removeItem(`live_ai_answer_${selectedQuestionId}`);
+        showToast('快取已清除！', 'success');
+        loadLiveAiAnswerCache(selectedQuestionId);
+        
+        // 同步更新列表中卡片的狀態
+        const content = userDrafts[selectedQuestionId] || '';
+        updateQuestionCardStatus(selectedQuestionId, content);
+        renderQuestions();
+    }
+}
+
+// 複製外部提問提示詞
+function handleCopyPrompt() {
+    if (!selectedQuestionId) return;
+    const question = questions_db.find(q => q.id === selectedQuestionId);
+    if (!question) return;
+
+    const answer = answers_db[selectedQuestionId] || { key_concepts: [], standard_outline: [] };
+
+    const promptText = `
+你是一位林業技術領域的國家考試專家。請為我解答以下這道國家考試申論題目，並提供：
+1. 核心考點與學術概念解析。
+2. 結構化的精準滿分擬答（包含大項與標題如：一、(一)、1.，字數約 800 - 1200 字）。
+3. 延伸常考的關聯知識與易錯陷阱。
+
+【考題資訊】
+年度與考試：${question.year}年 ${question.category}
+考科科目：${question.subject}
+核心評分學術名詞：${answer.key_concepts.join(', ') || '無特定'}
+題目內容：
+${question.q_num}、${question.question}
+`;
+
+    navigator.clipboard.writeText(promptText.trim()).then(() => {
+        const btn = document.getElementById('btn-copy-prompt');
+        const icon = btn.querySelector('i');
+        icon.className = 'fa-solid fa-check';
+        btn.style.color = 'var(--success)';
+        showToast('提示詞與中繼資料已複製到剪貼簿！', 'success');
+        setTimeout(() => {
+            icon.className = 'fa-solid fa-copy';
+            btn.style.color = '';
+        }, 2000);
+    }).catch(err => {
+        showToast('複製失敗：' + err.message, 'error');
+    });
+}
+
+// 複製 AI 解答 Markdown
+function handleCopyAiAnswer() {
+    if (!selectedQuestionId) return;
+    const cacheKey = `live_ai_answer_${selectedQuestionId}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (!cached) return;
+
+    navigator.clipboard.writeText(cached).then(() => {
+        const btn = document.getElementById('btn-copy-ai-answer');
+        const icon = btn.querySelector('i');
+        icon.className = 'fa-solid fa-check';
+        btn.style.color = 'var(--success)';
+        showToast('解答 Markdown 已複製到剪貼簿！', 'success');
+        setTimeout(() => {
+            icon.className = 'fa-solid fa-copy';
+            btn.style.color = '';
+        }, 2000);
+    }).catch(err => {
+        showToast('複製失敗：' + err.message, 'error');
+    });
+}
+
+// 下載 AI 解答 .md 檔案
+function handleDownloadAiAnswer() {
+    if (!selectedQuestionId) return;
+    const cacheKey = `live_ai_answer_${selectedQuestionId}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (!cached) return;
+
+    const question = questions_db.find(q => q.id === selectedQuestionId);
+    if (!question) return;
+
+    try {
+        const blob = new Blob([cached], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${question.year}年_${question.category.replace('三級','')}_${question.subject}_第${question.q_num}題_AI解題.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Markdown 解答已下載！', 'success');
+    } catch (e) {
+        showToast('下載失敗：' + e.message, 'error');
+    }
+}
+
+// AI 即時串流解題核心
+async function handleLiveAiSolve() {
+    if (!selectedQuestionId) return;
+
+    const apiKey = localStorage.getItem('api_key') || '';
+    if (!apiKey) {
+        showToast('請先設定您的 AI API 金鑰 (API Key)！', 'warning');
+        settingsModal.classList.add('show');
+        return;
+    }
+
+    const engine = localStorage.getItem('api_engine') || 'deepseek';
+    const questionObj = questions_db.find(q => q.id === selectedQuestionId);
+    const answerObj = answers_db[selectedQuestionId] || { key_concepts: [], standard_outline: [] };
+
+    const loader = document.getElementById('live-ai-loading');
+    const box = document.getElementById('live-ai-response-box');
+    const actions = document.getElementById('live-ai-actions');
+    const warning = document.getElementById('ai-hallucination-warning');
+    const indicator = document.getElementById('ai-cache-indicator');
+
+    loader.style.display = 'flex';
+    box.style.display = 'block';
+    warning.style.display = 'flex';
+    actions.style.display = 'none';
+    indicator.style.display = 'none';
+    box.innerHTML = '<p style="color: var(--text-secondary);">正在連接 AI 解題引擎，建立串流連線...</p>';
+
+    // 滾動到解題盒子
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    const callback = (text, isFinished, error) => {
+        if (error) {
+            loader.style.display = 'none';
+            box.innerHTML = `<p style="color: var(--error);"><i class="fa-solid fa-triangle-exclamation"></i> 解題出錯: ${error}</p>`;
+            return;
+        }
+
+        box.innerHTML = marked.parse(text);
+
+        if (isFinished) {
+            loader.style.display = 'none';
+            localStorage.setItem(`live_ai_answer_${selectedQuestionId}`, text);
+            actions.style.display = 'flex';
+            
+            // 顯示快取已儲存狀態
+            indicator.style.display = 'flex';
+            indicator.querySelector('span').innerText = '✨ 解答已自動保存至本機（下次開啟不消耗 API 額度）';
+            
+            // 更新狀態與按鈕
+            loadLiveAiAnswerCache(selectedQuestionId);
+            
+            // 同步更新列表中卡片的狀態
+            const content = outlineTextarea.value || '';
+            updateQuestionCardStatus(selectedQuestionId, content);
+            renderQuestions();
+            
+            showToast('AI 即時解題完成！', 'success');
+        }
+    };
+
+    if (engine === 'deepseek') {
+        callDeepSeekAPIStream(apiKey, questionObj, answerObj, callback);
+    } else {
+        const modelName = engine === 'gemini-pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+        callGeminiAPIStream(apiKey, modelName, questionObj, answerObj, callback);
+    }
+}
+
+// Stream call for Gemini
+async function callGeminiAPIStream(apiKey, model, q, a, callback) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}`;
+    const promptText = `
+你是一位林業技術國考評分官與輔導教練。請針對以下考題，提供一份可信度高、條理清晰且切合考點的解答：
+1. 【考點分析】歸納本題的核心物理、生態或經營學理。
+2. 【法規依據與公式】若涉及林業法規（如森林法、國有林林產物處分規則）或計算公式，請列出具體條文名稱與計算式。
+3. 【滿分申論擬答卡】模擬考生最佳作答格式，大項層次分明（一、(一)、1.），字數約 800-1200 字，必須詳盡完整。
+4. 【易錯避坑點】警告考生最常寫錯的關鍵語詞或學名、科名混淆。
+
+【考題內容】
+年度：${q.year}年
+等級：${q.category}
+考科：${q.subject}
+題號：第${q.q_num}題
+核心名詞：${a.key_concepts.join(', ') || '無特定'}
+題目：
+${q.question}
+`;
+
+    const payload = {
+        contents: [{
+            parts: [{ text: promptText }]
+        }],
+        generationConfig: {
+            temperature: 0.3
+        }
+    };
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            callback(null, false, `API 請求失敗 (${response.status}): ${errText}`);
+            return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+        let accumulatedText = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            let inString = false;
+            let escape = false;
+            let braceCount = 0;
+            let startIdx = -1;
+
+            for (let i = 0; i < buffer.length; i++) {
+                const char = buffer[i];
+                if (inString) {
+                    if (escape) {
+                        escape = false;
+                    } else if (char === '\\') {
+                        escape = true;
+                    } else if (char === '"') {
+                        inString = false;
+                    }
+                } else {
+                    if (char === '"') {
+                        inString = true;
+                    } else if (char === '{') {
+                        if (braceCount === 0) startIdx = i;
+                        braceCount++;
+                    } else if (char === '}') {
+                        braceCount--;
+                        if (braceCount === 0 && startIdx !== -1) {
+                            const jsonStr = buffer.substring(startIdx, i + 1);
+                            try {
+                                const parsed = JSON.parse(jsonStr);
+                                if (parsed.candidates && parsed.candidates[0].content && parsed.candidates[0].content.parts[0].text) {
+                                    accumulatedText += parsed.candidates[0].content.parts[0].text;
+                                    callback(accumulatedText, false, null);
+                                }
+                            } catch (e) {
+                                // ignore partial parsing errors
+                            }
+                            buffer = buffer.substring(i + 1);
+                            i = -1;
+                            startIdx = -1;
+                        }
+                    }
+                }
+            }
+        }
+        callback(accumulatedText, true, null);
+    } catch (err) {
+        callback(null, false, err.message);
+    }
+}
+
+// Stream call for DeepSeek (SSE format)
+async function callDeepSeekAPIStream(apiKey, q, a, callback) {
+    const url = 'https://api.deepseek.com/v1/chat/completions';
+    const promptText = `
+你是一位林業技術國考評分官與輔導教練。請針對以下考題，提供一份可信度高、條理清晰且切合考點的解答：
+1. 【考點分析】歸納本題的核心物理、生態或經營學理。
+2. 【法規依據與公式】若涉及林業法規（如森林法、國有林林產物處分規則）或計算公式，請列出具體條文名稱與計算式。
+3. 【滿分申論擬答卡】模擬考生最佳作答格式，大項層次分明（一、(一)、1.），字數約 800-1200 字，必須詳盡完整。
+4. 【易錯避坑點】警告考生最常寫錯的關鍵語詞或學名、科名混淆。
+
+【考題內容】
+年度：${q.year}年
+等級：${q.category}
+考科：${q.subject}
+題號：第${q.q_num}題
+核心名詞：${a.key_concepts.join(', ') || '無特定'}
+題目：
+${q.question}
+`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: "deepseek-chat",
+                messages: [
+                    { role: "system", content: "You are a forestry tech exam expert providing detailed answers." },
+                    { role: "user", content: promptText }
+                ],
+                stream: true,
+                temperature: 0.3
+            })
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            callback(null, false, `API 請求失敗 (${response.status}): ${errText}`);
+            return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+        let accumulatedText = "";
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); // Keep last incomplete line
+
+            for (const line of lines) {
+                const cleaned = line.trim();
+                if (!cleaned) continue;
+                if (cleaned.startsWith('data: ')) {
+                    const dataStr = cleaned.slice(6);
+                    if (dataStr === '[DONE]') continue;
+                    try {
+                        const parsed = JSON.parse(dataStr);
+                        const chunk = parsed.choices[0]?.delta?.content || "";
+                        accumulatedText += chunk;
+                        callback(accumulatedText, false, null);
+                    } catch (e) {
+                        // ignore parsing error for incomplete chunks
+                    }
+                }
+            }
+        }
+        callback(accumulatedText, true, null);
+    } catch (err) {
+        callback(null, false, err.message);
+    }
 }
