@@ -485,20 +485,17 @@ function toggleRefAnswer() {
         refAnswerPanel.classList.remove('show');
         btnToggleRef.innerHTML = '<i class="fa-solid fa-eye"></i> 顯示參考解答與核心概念';
     } else {
+        // 載入參考答案
         loadReferenceAnswerData(selectedQuestionId);
         refAnswerPanel.classList.add('show');
         btnToggleRef.innerHTML = '<i class="fa-solid fa-eye-slash"></i> 隱藏參考解答';
-
-        // 直接捲動 scroll 容器到參考答案位置（對絕對定位容器最可靠）
+        
+        // 滾動到參考答案位置
         setTimeout(() => {
-            const scrollContainer = document.getElementById('detail-scroll-area');
-            if (scrollContainer) {
-                scrollContainer.scrollTo({ top: refAnswerPanel.offsetTop - 20, behavior: 'smooth' });
-            }
-        }, 150);
+            refAnswerPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
     }
 }
-
 
 // Render reference answer details
 function loadReferenceAnswerData(questionId) {
@@ -601,12 +598,9 @@ async function handleAiEvaluation() {
         
         showToast('AI 解題完成！', 'success');
 
-        // 滾動到評估面板（直接操作 scroll 容器）
+        // 滾動到評估面板
         setTimeout(() => {
-            const scrollContainer = document.getElementById('detail-scroll-area');
-            if (scrollContainer) {
-                scrollContainer.scrollTo({ top: evaluationResultPanel.offsetTop - 20, behavior: 'smooth' });
-            }
+            evaluationResultPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 200);
 
     } catch (error) {

@@ -280,9 +280,8 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 0;
+    height: 100vh;
     min-width: 0;
-    overflow: hidden;
 }
 
 /* Top Navigation / Controls */
@@ -375,7 +374,6 @@ body {
     display: flex;
     flex: 1;
     min-height: 0;
-    overflow: hidden;
     position: relative;
 }
 
@@ -506,15 +504,15 @@ body {
 /* Right Column: Question Details & Workspace */
 .question-details-panel {
     flex: 1;
-    position: relative;  /* 絕對定位子元素的參考容器 */
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     background: radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.03) 0%, transparent 40%);
 }
 
 /* Empty State */
 .empty-workspace-state {
-    position: absolute;
-    inset: 0;
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -537,19 +535,14 @@ body {
     100% { transform: translateY(0px); }
 }
 
-/* Detail Scroll Area — 絕對定位 + block 佈局確保捲動 100% 有效 */
+/* Detail Scroll Area */
 .detail-scroll-area {
-    position: absolute;
-    inset: 0;
+    flex: 1;
     overflow-y: auto;
-    overflow-x: hidden;
     padding: 1.5rem;
-    display: block;       /* block 佈局：子元素不會被壓縮，必然溢出觸發捲軸 */
-}
-
-/* 用 margin-top 取代 flex gap */
-.detail-scroll-area > * + * {
-    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
 /* Question Content Card */
@@ -681,9 +674,7 @@ body {
 
 .outline-textarea {
     width: 100%;
-    min-height: 180px;
-    height: 220px;
-    max-height: 350px;
+    height: 250px;
     background: rgba(5, 11, 7, 0.3);
     border: 1px solid var(--border-color);
     border-radius: 0.6rem;
