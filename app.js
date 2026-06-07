@@ -520,7 +520,7 @@ async function handleAiEvaluation() {
     
     const userOutline = outlineTextarea.value.trim();
     if (!userOutline) {
-        showToast('請先輸入您的答題大綱 / 擬答草稿，再進行評估！', 'warning');
+        showToast('請先輸入您的答題大綱 / 擬答草稿，再進行 AI 解題！', 'warning');
         return;
     }
 
@@ -536,7 +536,7 @@ async function handleAiEvaluation() {
     const answerObj = answers_db[selectedQuestionId] || { key_concepts: [], standard_outline: [] };
 
     // 顯示 Loading
-    loadingText.innerText = '正在連結 AI 評卷引擎進行深度分析評分...';
+    loadingText.innerText = '正在連結 AI 解題引擎進行分析...';
     loadingOverlay.classList.add('show');
 
     try {
@@ -553,7 +553,7 @@ async function handleAiEvaluation() {
         // 更新左側卡片狀態
         updateQuestionCardStatus(selectedQuestionId, userOutline);
         
-        showToast('AI 智能解題評估完成！', 'success');
+        showToast('AI 解題完成！', 'success');
 
         // 滾動到評估面板
         setTimeout(() => {
@@ -562,7 +562,7 @@ async function handleAiEvaluation() {
 
     } catch (error) {
         console.error('AI Evaluation error:', error);
-        showToast(`評估失敗: ${error.message}`, 'error');
+        showToast(`解題失敗: ${error.message}`, 'error');
     } finally {
         loadingOverlay.classList.remove('show');
     }

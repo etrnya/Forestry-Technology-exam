@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>林業技術高普考 - 歷屆申論題庫瀏覽與 AI 智能答題評估系統</title>
+    <title>林業技術高普考 - 歷屆申論題庫瀏覽與 AI 解題系統</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -69,7 +69,7 @@
             <div class="sidebar-footer">
                 <button class="settings-btn" id="open-settings-btn">
                     <i class="fa-solid fa-gears"></i>
-                    <span class="settings-text">AI 評估金鑰設定</span>
+                    <span class="settings-text">AI 解題金鑰設定</span>
                 </button>
             </div>
         </aside>
@@ -188,7 +188,7 @@
                             
                             <div class="btn-control-panel">
                                 <button class="btn-primary" id="btn-ai-evaluate">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI 智能評估
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI 解題
                                 </button>
                                 <button class="btn-secondary" id="btn-toggle-ref">
                                     <i class="fa-solid fa-eye"></i> 顯示參考解答與核心概念
@@ -224,7 +224,7 @@
                         <div class="evaluation-result-panel" id="evaluation-result-panel">
                             <div class="eval-header">
                                 <span class="eval-title">
-                                    <i class="fa-solid fa-award" style="color: var(--primary-light);"></i> AI 智能解題評估回饋
+                                    <i class="fa-solid fa-award" style="color: var(--primary-light);"></i> AI 解題回饋
                                 </span>
                                 <div class="eval-grade-badge grade-s" id="eval-grade">S</div>
                             </div>
@@ -287,18 +287,18 @@
         <div class="modal-container">
             <div class="modal-header">
                 <span class="modal-title">
-                    <i class="fa-solid fa-key" style="color: var(--primary);"></i> AI 評估引擎設定
+                    <i class="fa-solid fa-key" style="color: var(--primary);"></i> AI 解題引擎設定
                 </span>
                 <button class="modal-close-btn" id="close-settings-btn">&times;</button>
             </div>
             
             <div class="modal-body">
                 <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4;">
-                    系統為純前端靜態應用，所有 AI 智能答題評估請求皆<b>直接發送至官方 API 端點</b>。您的 API 金鑰將安全地儲存在本地瀏覽器的 LocalStorage 中，不會上傳至任何第三方伺服器。
+                    系統為純前端靜態應用，所有 AI 解題請求皆<b>直接發送至官方 API 端點</b>。您的 API 金鑰將安全地儲存在本地瀏覽器的 LocalStorage 中，不會上傳至 any 第三方伺服器。
                 </p>
                 
                 <div class="form-group">
-                    <label class="form-label" for="api-engine-select">選擇 AI 評估模型</label>
+                    <label class="form-label" for="api-engine-select">選擇 AI 解題模型</label>
                     <select class="form-select" id="api-engine-select">
                         <option value="deepseek">DeepSeek Chat (推薦：平價且快速)</option>
                         <option value="gemini-flash">Gemini 2.5 Flash (快速、低延遲)</option>
@@ -311,9 +311,15 @@
                     <input type="password" class="form-input" id="api-key-input" placeholder="sk-..." autocomplete="off">
                 </div>
                 
-                <div style="font-size: 0.75rem; color: var(--text-muted);">
-                    * 如果您使用 DeepSeek，請在上方輸入 DeepSeek API 金鑰。<br>
-                    * 如果您使用 Gemini，請輸入 Google AI Studio 申請的 Gemini 金鑰。
+                <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.6;">
+                    * <b>Gemini 金鑰申請教學：</b>
+                    <a href="https://aistudio.google.com/apikey" target="_blank" style="color: var(--primary-light); text-decoration: underline; font-weight: 500;">
+                        取得免費 Gemini API 金鑰 →
+                    </a><br>
+                    * <b>DeepSeek 金鑰申請教學：</b>
+                    <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color: var(--primary-light); text-decoration: underline; font-weight: 500;">
+                        取得 DeepSeek API 金鑰 →
+                    </a>
                 </div>
             </div>
             
