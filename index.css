@@ -513,7 +513,8 @@ body {
 
 /* Empty State */
 .empty-workspace-state {
-    flex: 1;
+    position: absolute;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -536,16 +537,19 @@ body {
     100% { transform: translateY(0px); }
 }
 
-/* Detail Scroll Area — 用絕對定位確保捲動永遠有效 */
+/* Detail Scroll Area — 絕對定位 + block 佈局確保捲動 100% 有效 */
 .detail-scroll-area {
     position: absolute;
-    inset: 0;            /* top:0; right:0; bottom:0; left:0 */
+    inset: 0;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+    display: block;       /* block 佈局：子元素不會被壓縮，必然溢出觸發捲軸 */
+}
+
+/* 用 margin-top 取代 flex gap */
+.detail-scroll-area > * + * {
+    margin-top: 1.5rem;
 }
 
 /* Question Content Card */
