@@ -33,25 +33,40 @@ TAGS_KEYWORDS = {
     "林產學": ["林產", "木材", "纖維", "製漿", "乾燥", "防腐", "塗裝", "力學", "物理性質", "化學性質", "竹材"]
 }
 
+llm_engine = None
+openai_client = None
 gemini_client = None
 
 def init_llm():
-    global gemini_client
+    global llm_engine, openai_client, gemini_client
+    deepseek_key = os.getenv("DEEPSEEK_API_KEY")
     gemini_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_key:
-        print("[ERROR] 未在環境變數中找到 GEMINI_API_KEY。請於根目錄 .env 檔案中設定。")
-        sys.exit(1)
-        
-    try:
-        from google import genai
-        gemini_client = genai.Client(api_key=gemini_key)
-        print("[INFO] 已成功初始化 Gemini 2.5 引擎。")
-    except ImportError:
-        print("[ERROR] 未安裝 google-genai 套件，請先執行 pip install google-genai")
-        sys.exit(1)
+    
+    if deepseek_key:
+        try:
+            from openai import OpenAI
+            openai_client = OpenAI(api_key=deepseek_key, base_url="https://api.deepseek.com")
+            llm_engine = "deepseek"
+            print("[INFO] 已成功初始化 DeepSeek 引擎 (deepseek-chat)。")
+            return
+        except Exception as e:
+            print(f"[WARN] 初始化 DeepSeek 失敗: {e}，嘗試使用 Gemini...")
+            
+    if gemini_key:
+        try:
+            from google import genai
+            gemini_client = genai.Client(api_key=gemini_key)
+            llm_engine = "gemini"
+            print("[INFO] 已成功初始化 Gemini 2.5 引擎。")
+            return
+        except ImportError:
+            print("[WARN] 未安裝 google-genai，嘗試其他載入...")
+            
+    print("[ERROR] 未在環境變數中找到有效的 DEEPSEEK_API_KEY 或 GEMINI_API_KEY。")
+    sys.exit(1)
 
-def ask_gemini_for_structure(subject, question_text):
-    """呼叫 Gemini 對申論題進行核心剖析，產生提示大綱、關鍵字與擬答要點"""
+def ask_llm_for_structure(subject, question_text):
+    """呼叫 LLM 對申論題進行核心剖析，產生提示大綱、關鍵字與擬答要點"""
     prompt = f"""
     你是一位台灣林業技術高普考的專家。請針對以下「{subject}」學科的申論題進行深度解析：
     
@@ -85,21 +100,32 @@ def ask_gemini_for_structure(subject, question_text):
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            response = gemini_client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-                config={"response_mime_type": "application/json"}
-            )
-            return json.loads(response.text)
+            if llm_engine == "deepseek":
+                response = openai_client.chat.completions.create(
+                    model="deepseek-chat",
+                    response_format={"type": "json_object"},
+                    messages=[
+                        {"role": "system", "content": "You are a forestry tech exam expert. You output strict JSON."},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+                return json.loads(response.choices[0].message.content)
+            elif llm_engine == "gemini":
+                response = gemini_client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                    config={"response_mime_type": "application/json"}
+                )
+                return json.loads(response.text)
         except Exception as e:
             err_msg = str(e)
-            if "429" in err_msg or "Quota exceeded" in err_msg:
-                sleep_sec = 30 * (attempt + 1)
+            if "429" in err_msg or "Quota exceeded" in err_msg or "Rate limit" in err_msg:
+                sleep_sec = 10 * (attempt + 1)
                 print(f"  [WARN] 頻率限制 (429)。等待 {sleep_sec} 秒後重試...")
                 time.sleep(sleep_sec)
                 continue
             else:
-                print(f"  [WARN] Gemini API 呼叫失敗: {e}")
+                print(f"  [WARN] LLM API 呼叫失敗: {e}")
                 return None
     return None
 
@@ -188,6 +214,10 @@ def main():
             continue
             
         year = int(match.group(1))
+        
+        # 處理所有年度的考卷
+
+            
         level_code = match.group(2)
         session = int(match.group(3))
         subject_code = match.group(4)
@@ -218,11 +248,11 @@ def main():
                 
             print(f"  [+] 正在分析第 {q_num} 題 -> {question_text[:25]}...")
             
-            # 呼叫 Gemini 分析大綱與核心要點
-            llm_result = ask_gemini_for_structure(subject_name, question_text)
+            # 呼叫 LLM 分析大綱與核心要點
+            llm_result = ask_llm_for_structure(subject_name, question_text)
             
             if not llm_result:
-                print("  [ERROR] Gemini 評估失敗，跳過此題。")
+                print("  [ERROR] LLM 評估失敗，跳過此題。")
                 continue
                 
             # 重構試題結構

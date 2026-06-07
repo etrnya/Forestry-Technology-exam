@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>林業技術高普考 - 歷屆申論題庫瀏覽與 AI 智能答題評估系統</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Marked JS for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo-container">
+                <i class="fa-solid fa-tree logo-icon"></i>
+                <span class="logo-text">林業國考 AI 學習</span>
+                <button class="sidebar-toggle-btn" id="sidebar-toggle" title="縮合側邊欄">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+            </div>
+            
+            <div class="sidebar-section-title">專業考科</div>
+            <nav class="nav-list" id="subject-list">
+                <!-- Subjects will be dynamically populated -->
+                <button class="nav-btn active" data-subject="all">
+                    <i class="fa-solid fa-layer-group nav-icon"></i>
+                    <span class="nav-text">全部專業科目</span>
+                    <span class="badge-count" id="count-all">0</span>
+                </button>
+                <button class="nav-btn" data-subject="forest-ecology">
+                    <i class="fa-solid fa-seedling nav-icon"></i>
+                    <span class="nav-text">森林生態學</span>
+                    <span class="badge-count" id="count-forest-ecology">0</span>
+                </button>
+                <button class="nav-btn" data-subject="silviculture">
+                    <i class="fa-solid fa-leaf nav-icon"></i>
+                    <span class="nav-text">育林學</span>
+                    <span class="badge-count" id="count-silviculture">0</span>
+                </button>
+                <button class="nav-btn" data-subject="forest-management">
+                    <i class="fa-solid fa-compass-drafting nav-icon"></i>
+                    <span class="nav-text">森林經營學</span>
+                    <span class="badge-count" id="count-forest-management">0</span>
+                </button>
+                <button class="nav-btn" data-subject="forest-products">
+                    <i class="fa-solid fa-cubes nav-icon"></i>
+                    <span class="nav-text">林產學</span>
+                    <span class="badge-count" id="count-forest-products">0</span>
+                </button>
+                <button class="nav-btn" data-subject="ecology-management">
+                    <i class="fa-solid fa-arrows-spin nav-icon"></i>
+                    <span class="nav-text">生態與經營(普考)</span>
+                    <span class="badge-count" id="count-ecology-management">0</span>
+                </button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button class="settings-btn" id="open-settings-btn">
+                    <i class="fa-solid fa-gears"></i>
+                    <span class="settings-text">AI 評估金鑰設定</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-workspace">
+            <!-- Top Controls -->
+            <header class="top-bar">
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
+                    <input type="text" class="search-input" id="search-input" placeholder="搜尋題目關鍵字或標籤...">
+                </div>
+                
+                <div class="toolbar-controls">
+                    <select class="year-filter" id="year-filter">
+                        <option value="all">全部年度 (110~114)</option>
+                        <option value="114">114 年度</option>
+                        <option value="113">113 年度</option>
+                        <option value="112">112 年度</option>
+                        <option value="111">111 年度</option>
+                        <option value="110">110 年度</option>
+                    </select>
+                    
+                    <select class="level-filter" id="level-filter">
+                        <option value="all">全部等級</option>
+                        <option value="high">高考三級</option>
+                        <option value="normal">普通考試</option>
+                    </select>
+                    
+                    <button class="btn-action-icon" id="theme-toggle-btn" title="切換深淺主題">
+                        <i class="fa-solid fa-moon"></i>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Body Grid -->
+            <div class="workspace-columns">
+                <!-- Left: Question List -->
+                <section class="questions-list-panel">
+                    <div class="list-header">
+                        <span class="list-title">題目列表 (<span id="total-filtered-count">0</span>)</span>
+                    </div>
+                    <div class="questions-scroll-area" id="questions-list-container">
+                        <!-- Question items populated here -->
+                    </div>
+                </section>
+                
+                <!-- Right: Question Details and Workspace -->
+                <section class="question-details-panel" id="workspace-panel">
+                    <!-- Loading overlay for AI evaluation -->
+                    <div class="loading-overlay" id="loading-overlay">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text" id="loading-text">AI 正在審閱您的大綱並比對答題關鍵字...</div>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div class="empty-workspace-state" id="empty-state">
+                        <i class="fa-solid fa-mountain-sun empty-icon"></i>
+                        <h2>請在左側選擇一道林業申論題開始練習</h2>
+                        <p>系統提供 110-114 年高考三級與普通考試的專業科目題目，並支持 AI 大綱輔導與智能評分。</p>
+                    </div>
+                    
+                    <!-- Content State -->
+                    <div class="detail-scroll-area" id="detail-scroll-area" style="display: none;">
+                        <!-- Question Card -->
+                        <div class="detail-card">
+                            <div class="detail-header">
+                                <div class="detail-meta-group">
+                                    <span class="badge-tag badge-year" id="detail-year">114年</span>
+                                    <span class="badge-tag badge-level" id="detail-level">高考三級</span>
+                                    <span class="badge-tag badge-subject" id="detail-subject">森林生態學</span>
+                                </div>
+                                <span class="item-difficulty" id="detail-difficulty">難度：中等</span>
+                            </div>
+                            <div class="detail-question-text" id="detail-question-content">
+                                題目加載中...
+                            </div>
+                            <div class="tags-container" id="detail-tags-container">
+                                <!-- Tags -->
+                            </div>
+                        </div>
+                        
+                        <!-- AI Hints (Collapsed Card) -->
+                        <div class="hints-card">
+                            <div class="card-subtitle">
+                                <i class="fa-solid fa-brain"></i> AI 思考導引與作答提示
+                            </div>
+                            <ul class="hints-list" id="detail-hints-list">
+                                <!-- Hints -->
+                            </ul>
+                        </div>
+                        
+                        <!-- User Workspace -->
+                        <div class="user-workspace-section">
+                            <div class="workspace-header">
+                                <span class="workspace-title">
+                                    <i class="fa-solid fa-pen-nib" style="color: var(--primary-light);"></i> 您的答題大綱 / 擬答草稿
+                                </span>
+                                <span class="save-status" id="save-status">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> 已自動儲存於 LocalStorage
+                                </span>
+                            </div>
+                            
+                            <div class="outline-textarea-container">
+                                <textarea class="outline-textarea" id="outline-textarea" placeholder="請在此輸入您的作答大綱（例如：1. 前言、2. 核心分析與論述點、3. 結論），這將作為 AI 智能評估的依據。建議多包含關鍵術語以獲取高分。"></textarea>
+                                <span class="word-count-badge"><span id="word-count">0</span> 字</span>
+                            </div>
+                            
+                            <div class="btn-control-panel">
+                                <button class="btn-primary" id="btn-ai-evaluate">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI 智能評估
+                                </button>
+                                <button class="btn-secondary" id="btn-toggle-ref">
+                                    <i class="fa-solid fa-eye"></i> 顯示參考解答與核心概念
+                                </button>
+                                <button class="btn-danger" id="btn-reset-outline">
+                                    <i class="fa-solid fa-rotate-left"></i> 清除重寫
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Reference Answer Card -->
+                        <div class="ref-answer-panel" id="ref-answer-panel">
+                            <div class="ref-header">
+                                <i class="fa-solid fa-square-check" style="color: var(--primary-light);"></i> 標準參考大綱與評分核心名詞
+                            </div>
+                            <div class="ref-body">
+                                <div>
+                                    <div class="score-title" style="margin-bottom: 0.5rem; font-weight: 600;">評分委員看重之核心學術名詞</div>
+                                    <div class="coverage-tags-box" id="ref-key-concepts">
+                                        <!-- Concepts -->
+                                    </div>
+                                </div>
+                                <div style="margin-top: 0.5rem;">
+                                    <div class="score-title" style="margin-bottom: 0.5rem; font-weight: 600;">建議答題架構與大綱子標題</div>
+                                    <div id="ref-standard-outline" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary);">
+                                        <!-- Standard outlines -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- AI Evaluation Results Card -->
+                        <div class="evaluation-result-panel" id="evaluation-result-panel">
+                            <div class="eval-header">
+                                <span class="eval-title">
+                                    <i class="fa-solid fa-award" style="color: var(--primary-light);"></i> AI 智能解題評估回饋
+                                </span>
+                                <div class="eval-grade-badge grade-s" id="eval-grade">S</div>
+                            </div>
+                            
+                            <div class="eval-body">
+                                <div class="eval-scores-grid">
+                                    <div class="score-card">
+                                        <span class="score-title">核心概念覆蓋率</span>
+                                        <div class="score-val-row">
+                                            <span class="score-number" id="eval-concept-pct">0%</span>
+                                            <span class="score-total" id="eval-concept-count">0/0 個</span>
+                                        </div>
+                                        <div class="score-bar-track">
+                                            <div class="score-bar-fill" id="eval-concept-bar" style="width: 0%;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="score-card">
+                                        <span class="score-title">答題結構完整度</span>
+                                        <div class="score-val-row">
+                                            <span class="score-number" id="eval-structure-score">0</span>
+                                            <span class="score-total">/ 100</span>
+                                        </div>
+                                        <div class="score-bar-track">
+                                            <div class="score-bar-fill" id="eval-structure-bar" style="width: 0%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="score-title" style="margin-bottom: 0.5rem;">核心概念提及狀況</div>
+                                    <div class="coverage-tags-box" id="eval-keywords-status">
+                                        <!-- Keywords check results -->
+                                    </div>
+                                </div>
+                                
+                                <div class="feedback-section">
+                                    <div class="feedback-title">優點與亮點</div>
+                                    <div class="feedback-text" id="eval-strengths">暫無評估</div>
+                                </div>
+                                
+                                <div class="feedback-section" style="border-left-color: var(--warning);">
+                                    <div class="feedback-title">缺失與遺漏要點</div>
+                                    <div class="feedback-text" id="eval-weaknesses">暫無評估</div>
+                                </div>
+                                
+                                <div class="feedback-section" style="border-left-color: var(--primary-light);">
+                                    <div class="feedback-title">具體修改建議與優化指引</div>
+                                    <div class="feedback-text" id="eval-suggestions">暫無評估</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- API Settings Modal -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <span class="modal-title">
+                    <i class="fa-solid fa-key" style="color: var(--primary);"></i> AI 評估引擎設定
+                </span>
+                <button class="modal-close-btn" id="close-settings-btn">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4;">
+                    系統為純前端靜態應用，所有 AI 智能答題評估請求皆<b>直接發送至官方 API 端點</b>。您的 API 金鑰將安全地儲存在本地瀏覽器的 LocalStorage 中，不會上傳至任何第三方伺服器。
+                </p>
+                
+                <div class="form-group">
+                    <label class="form-label" for="api-engine-select">選擇 AI 評估模型</label>
+                    <select class="form-select" id="api-engine-select">
+                        <option value="deepseek">DeepSeek Chat (推薦：平價且快速)</option>
+                        <option value="gemini-flash">Gemini 2.5 Flash (快速、低延遲)</option>
+                        <option value="gemini-pro">Gemini 2.5 Pro (推薦：申論邏輯最優，速度稍慢)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="api-key-input">請輸入 API 金鑰 (API Key)</label>
+                    <input type="password" class="form-input" id="api-key-input" placeholder="sk-..." autocomplete="off">
+                </div>
+                
+                <div style="font-size: 0.75rem; color: var(--text-muted);">
+                    * 如果您使用 DeepSeek，請在上方輸入 DeepSeek API 金鑰。<br>
+                    * 如果您使用 Gemini，請輸入 Google AI Studio 申請的 Gemini 金鑰。
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btn-test-api">測試連線</button>
+                <button class="btn-primary" id="btn-save-settings">儲存設定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Database Scripts -->
+    <script src="questions_db.js"></script>
+    <script src="answers_db.js"></script>
+    
+    <!-- Application Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
