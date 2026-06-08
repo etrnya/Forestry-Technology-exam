@@ -479,19 +479,27 @@ function resetOutline() {
 
 // Toggle reference answer
 function toggleRefAnswer() {
-    if (!selectedQuestionId) return;
+    console.log('[toggleRefAnswer] Clicked. selectedQuestionId =', selectedQuestionId);
+    if (!selectedQuestionId) {
+        console.warn('[toggleRefAnswer] No question selected. Returning.');
+        return;
+    }
 
+    console.log('[toggleRefAnswer] refAnswerPanel classes before toggle:', refAnswerPanel.className);
     if (refAnswerPanel.classList.contains('show')) {
         refAnswerPanel.classList.remove('show');
         btnToggleRef.innerHTML = '<i class="fa-solid fa-eye"></i> 顯示參考解答與核心概念';
+        console.log('[toggleRefAnswer] Hiding panel.');
     } else {
         // 載入參考答案
+        console.log('[toggleRefAnswer] Showing panel and loading data...');
         loadReferenceAnswerData(selectedQuestionId);
         refAnswerPanel.classList.add('show');
         btnToggleRef.innerHTML = '<i class="fa-solid fa-eye-slash"></i> 隱藏參考解答';
         
         // 滾動到參考答案位置
         setTimeout(() => {
+            console.log('[toggleRefAnswer] Scrolling to panel.');
             refAnswerPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 100);
     }
@@ -499,12 +507,15 @@ function toggleRefAnswer() {
 
 // Render reference answer details
 function loadReferenceAnswerData(questionId) {
+    console.log('[loadReferenceAnswerData] Loading data for', questionId);
     if (typeof answers_db === 'undefined') {
+        console.error('[loadReferenceAnswerData] answers_db is undefined!');
         refKeyConcepts.innerHTML = '<div style="color: var(--error);">[錯誤] 無法讀取 answers_db.js</div>';
         return;
     }
 
     const answer = answers_db[questionId];
+    console.log('[loadReferenceAnswerData] Found answer object:', answer);
     if (!answer) {
         refKeyConcepts.innerHTML = '<div style="color: var(--text-secondary);">本題暫無預存核心關鍵名詞。</div>';
         refStandardOutline.innerHTML = '<p style="color: var(--text-secondary);">本題暫無預存參考答題大綱。</p>';
