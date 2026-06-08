@@ -728,7 +728,7 @@ ${userOutline}
         return parseJsonResponse(jsonStr);
 
     } else if (engine.startsWith('gemini')) {
-        const modelName = engine === 'gemini-pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+        const modelName = engine;
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
         
         const response = await fetch(url, {
@@ -800,7 +800,7 @@ async function testApiConnection() {
                 throw new Error(`回傳狀態碼 ${res.status}`);
             }
         } else {
-            const modelName = engine === 'gemini-pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+            const modelName = engine;
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1059,7 +1059,7 @@ async function handleLiveAiSolve() {
     if (engine === 'deepseek') {
         callDeepSeekAPIStream(apiKey, questionObj, answerObj, callback);
     } else {
-        const modelName = engine === 'gemini-pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+        const modelName = engine;
         callGeminiAPIStream(apiKey, modelName, questionObj, answerObj, callback);
     }
 }
