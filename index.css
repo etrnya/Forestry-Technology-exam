@@ -1288,6 +1288,8 @@ body {
         width: 100% !important;
         border-right: none;
         display: flex;
+        flex: 1;
+        min-height: 0;
     }
     
     .question-details-panel {
